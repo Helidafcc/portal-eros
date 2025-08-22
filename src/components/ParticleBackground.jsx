@@ -1,126 +1,38 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from "react";
+import { tsParticles } from "tsparticles-engine";
+import { loadFull } from "tsparticles";
 
 export default function ParticleBackground() {
-  const canvasRef = useRef(null);
-
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const loadParticles = async () => {
+      await loadFull(tsParticles);
 
-    const ctx = canvas.getContext('2d');
-    let animationFrameId;
-    
-    // Configurar canvas
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    // Partículas
-    const particles = [];
-    const particleCount = 50;
-
-    class Particle {
-      constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.vx = (Math.random() - 0.5) * 0.5;
-        this.vy = (Math.random() - 0.5) * 0.5;
-        this.size = Math.random() * 2 + 1;
-        this.opacity = Math.random() * 0.5 + 0.2;
-        this.color = Math.random() > 0.5 ? '#fbbf24' : '#8b5cf6';
-      }
-
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-
-        // Wrap around edges
-        if (this.x < 0) this.x = canvas.width;
-        if (this.x > canvas.width) this.x = 0;
-        if (this.y < 0) this.y = canvas.height;
-        if (this.y > canvas.height) this.y = 0;
-
-        // Pulsing effect
-        this.opacity = 0.2 + Math.sin(Date.now() * 0.001 + this.x * 0.01) * 0.3;
-      }
-
-      draw() {
-        ctx.save();
-        ctx.globalAlpha = this.opacity;
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Glow effect
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = this.color;
-        ctx.fill();
-        
-        ctx.restore();
-      }
-    }
-
-    // Criar partículas
-    for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle());
-    }
-
-    // Conectar partículas próximas
-    const connectParticles = () => {
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < 100) {
-            ctx.save();
-            ctx.globalAlpha = (100 - distance) / 100 * 0.1;
-            ctx.strokeStyle = '#fbbf24';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.stroke();
-            ctx.restore();
-          }
-        }
-      }
-    };
-
-    // Loop de animação
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      particles.forEach(particle => {
-        particle.update();
-        particle.draw();
+      await tsParticles.load("tsparticles", {
+        fullScreen: { enable: true, zIndex: -1 },
+        particles: {
+          number: { value: 60 },
+          color: { value: ["#9d4edd", "#f72585", "#4361ee"] },
+          shape: { type: "circle" },
+          opacity: { value: 0.6 },
+          size: { value: { min: 1, max: 5 } },
+          move: { enable: true, speed: 1.2, direction: "none", outModes: "out" },
+        },
+        interactivity: {
+          events: {
+            onHover: { enable: true, mode: "repulse" },
+            onClick: { enable: true, mode: "push" },
+          },
+          modes: {
+            repulse: { distance: 100 },
+            push: { quantity: 4 },
+          },
+        },
+        background: { color: "#0d0d1a" },
       });
-      
-      connectParticles();
-      
-      animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
-
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      cancelAnimationFrame(animationFrameId);
-    };
+    loadParticles();
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none z-0"
-      style={{ background: 'transparent' }}
-    />
-  );
+  return <div id="tsparticles" />;
 }
-
